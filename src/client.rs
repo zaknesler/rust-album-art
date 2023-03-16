@@ -5,6 +5,8 @@ pub struct Client {
     client: Option<reqwest::Client>,
 }
 
+const BASE_URL: &str = "https://itunes.apple.com/search";
+
 impl Client {
     pub fn init(&mut self) -> anyhow::Result<()> {
         let client = reqwest::Client::builder().build()?;
@@ -17,11 +19,22 @@ impl Client {
             return Err(anyhow::anyhow!("Client not initialized"));
         }
 
-        let url = format!(
-            "https://itunes.apple.com/search?media=music&entity=album&limit=200&country=US&term={}",
-            query,
-        );
-        let res = reqwest::get(url).await?.text().await?;
+        let res = self
+            .client
+            .as_ref()
+            .unwrap()
+            .get(BASE_URL)
+            .query(&[
+                ("media", "music"),
+                ("entity", "album"),
+                ("limit", "200"),
+                ("country", "US"),
+                ("term", query),
+            ])
+            .send()
+            .await?
+            .text()
+            .await?;
 
         tracing::debug!("Album response: {}", res);
 

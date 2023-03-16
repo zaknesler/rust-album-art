@@ -2,6 +2,8 @@ mod cli;
 mod client;
 mod model;
 
+use chrono::Utc;
+use colored::Colorize;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -28,7 +30,16 @@ async fn main() -> anyhow::Result<()> {
 
             let query = sub_matches.get_one::<String>("QUERY").unwrap();
 
-            let data = client.find_album(query);
+            for album in client.find_album(query).await?.results {
+                let release_date: chrono::DateTime<Utc> = album.release_date.into();
+
+                println!(
+                    "{} {} {}",
+                    release_date.format("%Y").to_string().bright_yellow().bold(),
+                    album.artist_name.bright_blue().bold(),
+                    album.collection_name.white()
+                );
+            }
         }
         _ => {}
     }
