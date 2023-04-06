@@ -1,8 +1,9 @@
-mod cli;
+mod args;
 mod client;
 mod model;
 
 use chrono::Utc;
+use clap::Parser;
 use colored::Colorize;
 use std::collections::HashMap;
 use tracing::Level;
@@ -12,10 +13,10 @@ const COLORS: &[(u8, u8, u8)] = &[(88, 129, 87), (163, 177, 138), (218, 215, 205
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let matches = cli::cmd().get_matches();
+    let args = args::Cli::parse();
 
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(match matches.get_one::<String>("log").unwrap().as_str() {
+        .with_max_level(match args.log.as_str() {
             "trace" => Level::TRACE,
             "debug" => Level::DEBUG,
             "info" => Level::INFO,
@@ -26,16 +27,14 @@ async fn main() -> anyhow::Result<()> {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    match matches.subcommand() {
-        Some(("search", sub_matches)) => {
+    match args.command {
+        args::Command::Search { query } => {
             let mut client = client::Client::default();
             client.init()?;
 
-            let query = sub_matches.get_one::<String>("QUERY").unwrap();
-
             let mut grouped: HashMap<&String, Vec<&model::Album>> = HashMap::new();
 
-            let items = client.find_album(query).await?.results;
+            let items = client.find_album(&query).await?.results;
             for item in items.iter() {
                 if !grouped.contains_key(&item.artist_name) {
                     grouped.insert(&item.artist_name, Vec::new());
@@ -72,7 +71,6 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        _ => {}
     }
 
     Ok(())
