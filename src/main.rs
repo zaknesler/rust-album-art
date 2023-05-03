@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
             let res = client.find_album(&query).await?;
             let results = GroupedResults::from(res);
 
-            println!("{}", results);
+            print!("{}", results);
         }
     }
 
