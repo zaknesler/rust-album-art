@@ -26,7 +26,7 @@ pub struct Album {
     pub collection_price: Option<f64>,
     pub collection_explicitness: Explicitness,
     pub track_count: i64,
-    pub copyright: String,
+    pub copyright: Option<String>,
     pub country: String,
     pub currency: String,
     #[serde(with = "bson_datetime_as_rfc3339_string")]
