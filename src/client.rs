@@ -7,11 +7,21 @@ pub struct Client {
     limit: u32,
 }
 
+pub struct ClientOptions {
+    pub limit: u32,
+}
+
+impl Default for ClientOptions {
+    fn default() -> Self {
+        Self { limit: 200 }
+    }
+}
+
 impl Client {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(opts: ClientOptions) -> anyhow::Result<Self> {
         Ok(Self {
             client: reqwest::Client::builder().build()?,
-            limit: 200,
+            limit: opts.limit,
         })
     }
 

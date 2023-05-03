@@ -5,7 +5,7 @@ mod client;
 mod model;
 mod results;
 
-use crate::results::GroupedResults;
+use crate::{client::ClientOptions, results::GroupedResults};
 use clap::Parser;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
@@ -23,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
 
     match args.command {
         args::Command::Search { query } => {
-            let client = client::Client::new()?;
+            let client = client::Client::new(ClientOptions::default())?;
 
             let res = client.find_album(&query).await?;
             let results = GroupedResults::from(res);
