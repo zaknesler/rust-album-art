@@ -1,43 +1,48 @@
 use crate::model::AlbumResponse;
 
-#[derive(Default)]
-pub struct Client {
-    client: Option<reqwest::Client>,
-}
-
 const BASE_URL: &str = "https://itunes.apple.com/search";
 
+pub struct Client {
+    client: reqwest::Client,
+    limit: u32,
+}
+
 impl Client {
-    pub fn init(&mut self) -> anyhow::Result<()> {
-        let client = reqwest::Client::builder().build()?;
-        self.client = Some(client);
-        Ok(())
+    pub fn new() -> anyhow::Result<Self> {
+        Ok(Self {
+            client: reqwest::Client::builder().build()?,
+            limit: 200,
+        })
     }
 
-    pub async fn find_album(&self, query: &str) -> anyhow::Result<AlbumResponse> {
-        if self.client.is_none() {
-            return Err(anyhow::anyhow!("Client not initialized"));
-        }
-
+    /// Make a GET request to the API and deserialize the response
+    async fn get<T: serde::de::DeserializeOwned>(
+        &self,
+        query: &[(&str, &str)],
+    ) -> anyhow::Result<T> {
         let res = self
             .client
-            .as_ref()
-            .unwrap()
             .get(BASE_URL)
-            .query(&[
-                ("media", "music"),
-                ("entity", "album"),
-                ("limit", "200"),
-                ("country", "US"),
-                ("term", query),
-            ])
+            .query(query)
             .send()
             .await?
             .text()
             .await?;
 
-        tracing::debug!("Album response: {}", res);
+        tracing::debug!("API response: {}", res);
 
-        serde_json::from_str::<AlbumResponse>(res.as_str()).map_err(|err| anyhow::anyhow!(err))
+        serde_json::from_str::<T>(res.as_str()).map_err(|err| anyhow::anyhow!(err))
+    }
+
+    /// Query for an album
+    pub async fn find_album(&self, query: &str) -> anyhow::Result<AlbumResponse> {
+        self.get(&[
+            ("media", "music"),
+            ("entity", "album"),
+            ("limit", &self.limit.to_string()),
+            ("country", "US"),
+            ("term", query),
+        ])
+        .await
     }
 }

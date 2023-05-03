@@ -23,8 +23,7 @@ async fn main() -> anyhow::Result<()> {
 
     match args.command {
         args::Command::Search { query } => {
-            let mut client = client::Client::default();
-            client.init()?;
+            let client = client::Client::new()?;
 
             let res = client.find_album(&query).await?;
             let results = GroupedResults::from(res);
